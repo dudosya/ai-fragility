@@ -1,43 +1,53 @@
-# AI Fragility: Adversarial Assurance Demo
+# AI Fragility
 
-Interactive framework to visualize adversarial fragility of vision models, apply classic signal-processing defenses, and quantify recovery.
+Minimal demo to expose adversarial attacks, simple defenses, and robustness metrics for vision models.
 
-## Stack
+## Requirements
 
-- Python 3.11+, managed with uv
-- PyTorch + torchvision + Lightning
-- Typer CLI, FastAPI service, Hydra configs
-- Polars + DuckDB for tabular logging
-- wandb for experiment tracking (optional)
+- Python 3.11+
+- `uv` for dependency management
+- PyTorch downloads ResNet18 weights on first run (expect a one-time wait)
 
-## Quickstart
+## Install
 
-1. Install dependencies and the local package: `uv sync && uv pip install -e .`
-2. Run a demo attack/defense (use a JPEG/PNG image path): `uv run python -m ai_fragility.cli demo path/to/image.jpg --save-dir artifacts/demo`
-   - Optional logging: add `--log --duckdb-path artifacts/runs.duckdb` (and `--wandb --wandb-project ai-fragility` if you want wandb)
-3. Start the API + UI: `uv run uvicorn ai_fragility.api:app --reload --host 0.0.0.0 --port 8000`
-   - Open http://localhost:8000/, upload an image, tweak attack/defense sliders, and optionally tick "Log run" to append to DuckDB.
+```bash
+uv sync --extra dev
+```
 
-Outputs include clean/attacked/defended images, perturbation heatmap, gradient map, and a security gap metric (defended vs attacked confidence on the clean top-1 class).
+## CLI
 
-## Project Layout
+- Demo on a local image: `uv run python -m ai_fragility.cli demo path/to/image.jpg --method fgsm --epsilon 0.02 --save-dir artifacts/demo`
+- Enable logging: add `--log --duckdb-path artifacts/runs.duckdb`
+- Optional wandb: add `--wandb --wandb-project ai-fragility [--wandb-entity <entity>]`
 
-- `src/ai_fragility/` core code (pipeline, attacks, defenses, CLI, API)
-- `configs/` Hydra configuration (model/attack/defense defaults)
-- `Justfile` common tasks (`just lint`, `just test`, `just serve`)
+Outputs: clean/attacked/defended images, perturbation heatmap, gradient map, security gap.
+
+## API / Web UI
+
+- Start: `uv run uvicorn ai_fragility.api:app --reload --host 0.0.0.0 --port 8000`
+- Use: open http://localhost:8000/, upload an image, adjust attack/defense/noise controls. Tick "Log run" to write to DuckDB.
+- Logs page: http://localhost:8000/logs shows recent DuckDB rows.
 
 ## Logging
 
-- DuckDB: written to `artifacts/runs.duckdb` via CLI `--log` or UI checkbox.
-- wandb: enable with CLI flags `--wandb --wandb-project <project> [--wandb-entity <entity>]` (UI logging currently DuckDB-only).
+- DuckDB: `artifacts/runs.duckdb` (CLI flag `--log`, UI checkbox). `/logs` lists recent runs.
+- wandb: CLI-only (flags above). UI logging is DuckDB-only.
 
-## Web UI
+## Tasks (Justfile)
 
-- Start server: `uv run uvicorn ai_fragility.api:app --reload --host 0.0.0.0 --port 8000`
-- Visit http://localhost:8000/ and adjust epsilon/steps/defense; outputs render inline (clean/attacked/defended, noise, gradient, top-3, security gap).
+- `just` (lists tasks) — requires the `just` binary on PATH (e.g., `choco install just` or `scoop install just`).
+- `just lint` → `ruff check`
+- `just fmt` → `ruff format`
+- `just test` → `pytest`
+- `just serve` → run API with reload
+- `just demo` → run CLI demo
 
-## Next Steps
+## Tests
 
-- Expand defenses (denoise, spectral filters, wavelet)
-- Add download buttons for rendered outputs and latency display
-- Harden logging (batch writes, richer metadata) and add more explainability views
+`uv run pytest`
+
+## Troubleshooting
+
+- Install deps with `uv sync --extra dev` to get `ruff`, `pytest`, `pyarrow`, `pytz`.
+- First model run downloads weights; wait for completion.
+- Upload limit is 10 MB; invalid images return 400.
