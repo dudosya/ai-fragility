@@ -1,0 +1,18 @@
+defaults: []
+
+seed: 42
+
+model:
+  name: resnet18
+
+attack:
+  method: fgsm
+  epsilon: 0.02
+  alpha: 0.005
+  steps: 20
+
+defense:
+  kind: gaussian
+  kernel_size: 3
+  sigma: 1.0
+  jpeg_quality: 75
